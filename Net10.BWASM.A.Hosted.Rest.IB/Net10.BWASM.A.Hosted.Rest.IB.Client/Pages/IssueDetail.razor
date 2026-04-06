@@ -1,0 +1,60 @@
+@page "/issues/{Id:int}"
+@inject IssueApiService IssueApi
+@inject NavigationManager Nav
+
+<h3>課題詳細</h3>
+
+@if (isLoading)
+{
+    <p>読み込み中...</p>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (issue is not null)
+{
+    <table class="table">
+        <tbody>
+            <tr><th>ID</th><td>@issue.Id</td></tr>
+            <tr><th>記入者氏名</th><td>@issue.AuthorName</td></tr>
+            <tr><th>記入日時</th><td>@issue.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</td></tr>
+            <tr><th>カテゴリ</th><td>@issue.Category</td></tr>
+            <tr><th>課題タイトル</th><td>@issue.Title</td></tr>
+            <tr><th>課題の文面</th><td style="white-space:pre-wrap">@issue.Description</td></tr>
+            <tr><th>ステータス</th><td>@issue.Status.ToDisplayName()</td></tr>
+            <tr><th>解決の文面</th><td style="white-space:pre-wrap">@issue.Resolution</td></tr>
+            <tr><th>解決担当者名</th><td>@issue.ResolverName</td></tr>
+            <tr><th>解決日時</th><td>@issue.ResolvedAt?.ToString("yyyy/MM/dd HH:mm:ss")</td></tr>
+        </tbody>
+    </table>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" @onclick='() => Nav.NavigateTo($"/issues/{Id}/edit")'>編集</button>
+        <button class="btn btn-danger" @onclick='() => Nav.NavigateTo($"/issues/{Id}/delete")'>削除</button>
+        <button class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/issues")'>戻る</button>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private IssueDto? issue;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            issue = await IssueApi.GetByIdAsync(Id);
+            if (issue is null) errorMessage = "課題が見つかりません。";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"課題の読み込みに失敗しました: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,67 @@
+@page "/issues"
+@inject IssueApiService IssueApi
+@inject NavigationManager Nav
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">課題掲示板</h3>
+    <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/issues/create")'>課題登録</button>
+</div>
+
+@if (isLoading)
+{
+    <p>読み込み中...</p>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>記入者氏名</th>
+                <th>カテゴリ</th>
+                <th>課題タイトル</th>
+                <th>ステータス</th>
+                <th>記入日時</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var issue in issues)
+            {
+                <tr style="cursor:pointer" @onclick='() => Nav.NavigateTo($"/issues/{issue.Id}")'>
+                    <td>@issue.Id</td>
+                    <td>@issue.AuthorName</td>
+                    <td>@issue.Category</td>
+                    <td>@issue.Title</td>
+                    <td>@issue.Status.ToDisplayName()</td>
+                    <td>@issue.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<IssueDto> issues = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            issues = await IssueApi.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"課題の読み込みに失敗しました: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Net10.BWASM.A.Hosted.Rest.IB/Net10.BWASM.A.Hosted.Rest.IB.Client/Net10.BWASM.A.Hosted.Rest.IB.Client.csproj" />
+  <Project Path="Net10.BWASM.A.Hosted.Rest.IB/Net10.BWASM.A.Hosted.Rest.IB/Net10.BWASM.A.Hosted.Rest.IB.csproj" />
+  <Project Path="Net10.BWASM.A.Hosted.Rest.IB/Shared.Rest.IB/Shared.Rest.IB.csproj" />
+</Solution>

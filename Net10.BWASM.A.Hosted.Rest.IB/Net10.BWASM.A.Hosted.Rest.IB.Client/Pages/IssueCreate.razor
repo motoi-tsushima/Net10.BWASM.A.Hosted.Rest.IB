@@ -1,0 +1,81 @@
+@page "/issues/create"
+@inject IssueApiService IssueApi
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<h3>課題登録</h3>
+
+<EditForm Model="model" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">記入者氏名 <span class="text-danger">*</span></label>
+        <InputText class="form-control" @bind-Value="model.AuthorName" />
+        <ValidationMessage For="() => model.AuthorName" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">カテゴリ</label>
+        <InputText class="form-control" @bind-Value="model.Category" />
+        <ValidationMessage For="() => model.Category" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">課題タイトル <span class="text-danger">*</span></label>
+        <InputText class="form-control" @bind-Value="model.Title" />
+        <ValidationMessage For="() => model.Title" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">課題の文面 <span class="text-danger">*</span></label>
+        <InputTextArea class="form-control" rows="5" @bind-Value="model.Description" />
+        <ValidationMessage For="() => model.Description" />
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">登録</button>
+        <button type="button" class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/issues")'>戻る</button>
+    </div>
+</EditForm>
+
+@code {
+    private IssueCreateDto model = new();
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "authorName");
+            if (!string.IsNullOrEmpty(saved))
+            {
+                model.AuthorName = saved;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "authorName", model.AuthorName);
+            await IssueApi.CreateAsync(model);
+            Nav.NavigateTo("/issues");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"登録に失敗しました: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

@@ -1,0 +1,135 @@
+@page "/issues/{Id:int}/edit"
+@inject IssueApiService IssueApi
+@inject NavigationManager Nav
+
+<h3>課題編集</h3>
+
+@if (isLoading)
+{
+    <p>読み込み中...</p>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <table class="table mb-3">
+        <tbody>
+            <tr><th>記入者氏名</th><td>@authorName</td></tr>
+            <tr><th>記入日時</th><td>@createdAt?.ToString("yyyy/MM/dd HH:mm:ss")</td></tr>
+        </tbody>
+    </table>
+
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">カテゴリ</label>
+            <InputText class="form-control" @bind-Value="model.Category" />
+            <ValidationMessage For="() => model.Category" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">課題タイトル <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="model.Title" />
+            <ValidationMessage For="() => model.Title" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">課題の文面 <span class="text-danger">*</span></label>
+            <InputTextArea class="form-control" rows="5" @bind-Value="model.Description" />
+            <ValidationMessage For="() => model.Description" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">ステータス</label>
+            <InputSelect class="form-select" @bind-Value="model.Status">
+                @foreach (var s in Enum.GetValues<IssueStatus>())
+                {
+                    <option value="@s">@s.ToDisplayName()</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">解決の文面</label>
+            <InputTextArea class="form-control" rows="3" @bind-Value="model.Resolution" />
+            <ValidationMessage For="() => model.Resolution" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">解決担当者名</label>
+            <InputText class="form-control" @bind-Value="model.ResolverName" />
+            <ValidationMessage For="() => model.ResolverName" />
+        </div>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">更新</button>
+            <button type="button" class="btn btn-secondary" @onclick='() => Nav.NavigateTo($"/issues/{Id}")'>戻る</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private IssueUpdateDto model = new();
+    private string? authorName;
+    private DateTime? createdAt;
+    private bool isLoading = true;
+    private string? loadError;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var issue = await IssueApi.GetByIdAsync(Id);
+            if (issue is null)
+            {
+                loadError = "課題が見つかりません。";
+                return;
+            }
+            authorName = issue.AuthorName;
+            createdAt = issue.CreatedAt;
+            model = new IssueUpdateDto
+            {
+                Category = issue.Category,
+                Title = issue.Title,
+                Description = issue.Description,
+                Status = issue.Status,
+                Resolution = issue.Resolution,
+                ResolverName = issue.ResolverName
+            };
+        }
+        catch (Exception ex)
+        {
+            loadError = $"課題の読み込みに失敗しました: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        try
+        {
+            await IssueApi.UpdateAsync(Id, model);
+            Nav.NavigateTo($"/issues/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"更新に失敗しました: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
